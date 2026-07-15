@@ -1,6 +1,6 @@
 # Maritime Coast Radio Simulator
 
-**Version 1.1.0**
+**Version 1.2.0**
 
 Automated maritime radio simulator for training and demo use. Hold **Push to Talk**, speak a VHF message, and the coast station listens, logs the traffic, and replies with generated voice plus a written entry.
 
