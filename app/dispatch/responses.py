@@ -1,4 +1,4 @@
-"""Build spoken and logged dispatcher replies from parsed radio traffic."""
+"""Build maritime coast-station replies from parsed radio traffic."""
 
 from __future__ import annotations
 
@@ -15,59 +15,52 @@ class CraftedResponse:
     spoken_response: str
 
 
-def _unit_label(parsed: ParsedTraffic) -> str:
-    return parsed.unit_id or "Unit"
+def _vessel_label(parsed: ParsedTraffic) -> str:
+    return parsed.unit_id or "vessel"
 
 
 def craft_response(parsed: ParsedTraffic) -> CraftedResponse:
-    unit = _unit_label(parsed)
+    vessel = _vessel_label(parsed)
     location = parsed.location
-    incident = parsed.incident_type
 
-    if parsed.intent == "repeat_request":
-        text = f"Dispatch copy, {unit}. Say again your last traffic."
-    elif parsed.intent == "location_request":
-        if location:
-            text = f"Dispatch copy, {unit}. Your 10-20 is logged as {location}."
-        else:
-            text = f"Dispatch to {unit}, advise your 10-20."
-    elif parsed.intent == "on_scene":
-        scene = f" at {location}" if location else ""
-        detail = f" {incident.replace('_', ' ')}" if incident else ""
-        text = f"Dispatch copy, {unit} on scene{scene}.{detail} Stand by for further."
-    elif parsed.intent == "transport":
-        destination = f" to {location}" if location else ""
-        code = " Code 3" if parsed.priority == Priority.EMERGENCY else ""
-        text = f"Dispatch copy, {unit} transporting{destination}{code}. Advise ETA when able."
-    elif parsed.intent == "status_available":
-        text = f"Dispatch copy, {unit} 10-8 available."
-    elif parsed.intent == "status_oos":
-        text = f"Dispatch copy, {unit} 10-7 out of service."
-    elif parsed.intent == "enroute":
-        target = f" to {location}" if location else ""
-        text = f"Dispatch copy, {unit} en route{target}. Keep us advised."
-    elif parsed.intent == "resource_request":
-        need = incident or "additional resources"
-        where = f" at {location}" if location else ""
-        text = (
-            f"Dispatch copy, {unit} requesting {need}{where}. "
-            "Air cover remaining units and advise."
+    if parsed.intent == "unintelligible":
+        text = "Vessel calling, please repeat."
+    elif parsed.intent == "securite":
+        return CraftedResponse(
+            response="(no response — sécurité broadcast)",
+            spoken_response="",
         )
-    elif parsed.intent == "incident_report":
-        kind = incident or "incident"
-        where = f" at {location}" if location else ""
-        if parsed.priority == Priority.EMERGENCY:
+    elif parsed.intent == "mayday":
+        where = f" Position noted as {location}." if location else ""
+        text = (
+            f"Mayday received. {vessel.title()}, this is Coast Radio. "
+            f"Distress acknowledged.{where} Stand by, assistance is being coordinated."
+        )
+    elif parsed.intent == "pan_pan":
+        where = f" Position noted as {location}." if location else ""
+        text = (
+            f"Pan Pan received. {vessel.title()}, this is Coast Radio. "
+            f"Urgent traffic acknowledged.{where} "
+            "Please state nature of urgency and number of persons on board."
+        )
+    elif parsed.intent == "repeat_request":
+        text = "Vessel calling, please repeat."
+    elif parsed.intent == "position_request":
+        if location:
             text = (
-                f"Dispatch copies emergency traffic from {unit}, {kind}{where}. "
-                "All units stand by."
+                f"{vessel.title()}, this is Coast Radio. "
+                f"Your position is logged as {location}."
             )
         else:
-            text = f"Dispatch copy, {unit}, {kind}{where} is logged."
+            text = (
+                f"{vessel.title()}, this is Coast Radio. "
+                "Please advise your position."
+            )
     elif parsed.intent == "radio_check":
-        text = f"Dispatch to {unit}, loud and clear."
+        text = f"{vessel.title()}, this is Coast Radio. You are readable, strength 5."
     else:
-        ack = f", {unit}" if parsed.unit_id else ""
-        text = f"Dispatch copy{ack}. Your traffic is logged."
+        ack = f"{vessel.title()}, " if parsed.unit_id else ""
+        text = f"{ack}this is Coast Radio. Received, your message is logged."
 
     spoken = _to_spoken(text)
     return CraftedResponse(response=text, spoken_response=spoken)
@@ -76,10 +69,10 @@ def craft_response(parsed: ParsedTraffic) -> CraftedResponse:
 def status_phrase(status: Optional[UnitStatus]) -> str:
     mapping = {
         UnitStatus.AVAILABLE: "available",
-        UnitStatus.ENROUTE: "en route",
+        UnitStatus.ENROUTE: "urgent traffic",
         UnitStatus.ONSCENE: "on scene",
-        UnitStatus.BUSY: "busy",
-        UnitStatus.TRANSPORTING: "transporting",
+        UnitStatus.BUSY: "distress",
+        UnitStatus.TRANSPORTING: "underway",
         UnitStatus.OUT_OF_SERVICE: "out of service",
         UnitStatus.UNKNOWN: "unknown",
     }
@@ -89,15 +82,10 @@ def status_phrase(status: Optional[UnitStatus]) -> str:
 def _to_spoken(text: str) -> str:
     spoken = text
     replacements = {
-        "10-8": "ten eight",
-        "10-7": "ten seven",
-        "10-4": "ten four",
-        "10-20": "ten twenty",
-        "10-9": "ten nine",
-        "10-23": "ten twenty three",
-        "ETA": "E T A",
-        "Code 3": "code three",
-        "Code 2": "code two",
+        "Pan Pan": "pan pan",
+        "Mayday": "mayday",
+        "sécurité": "securitay",
+        "Coast Radio": "Coast Radio",
     }
     for src, dst in replacements.items():
         spoken = spoken.replace(src, dst)

@@ -7,6 +7,7 @@
   const unitList = document.getElementById("unitList");
   const logCount = document.getElementById("logCount");
   const connectionPill = document.getElementById("connectionPill");
+  const versionTag = document.getElementById("versionTag");
   const textForm = document.getElementById("textForm");
   const textInput = document.getElementById("textInput");
   const muteButton = document.getElementById("muteButton");
@@ -56,7 +57,7 @@
         (entry) => `
       <article class="log-item">
         <div class="meta">
-          <span>${formatTime(entry.timestamp)} · ${entry.unit_id || "Unknown unit"}</span>
+          <span>${formatTime(entry.timestamp)} · ${escapeHtml(entry.unit_id || "Unknown vessel")}</span>
           <span class="badge ${entry.priority}">${entry.priority}</span>
         </div>
         <p><strong>RX:</strong> ${escapeHtml(entry.transcript)}</p>
@@ -68,7 +69,7 @@
 
   function renderUnits(units) {
     if (!units.length) {
-      unitList.innerHTML = '<p class="empty">No units heard yet.</p>';
+      unitList.innerHTML = '<p class="empty">No vessels heard yet.</p>';
       return;
     }
     unitList.innerHTML = units
@@ -95,12 +96,17 @@
   }
 
   async function refreshBoard() {
-    const [logRes, unitRes] = await Promise.all([
+    const [logRes, unitRes, healthRes] = await Promise.all([
       fetch("/api/log"),
       fetch("/api/units"),
+      fetch("/api/health"),
     ]);
     const logData = await logRes.json();
     const unitData = await unitRes.json();
+    const healthData = await healthRes.json();
+    if (healthData.version && versionTag) {
+      versionTag.textContent = `v${healthData.version}`;
+    }
     renderLog(logData.entries || []);
     renderUnits(unitData.units || []);
   }
@@ -115,7 +121,7 @@
       const response = await fetch("/api/dispatch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: cleaned, channel: "Primary" }),
+        body: JSON.stringify({ transcript: cleaned, channel: "VHF Ch 16" }),
       });
       if (!response.ok) {
         throw new Error(`Dispatch failed (${response.status})`);

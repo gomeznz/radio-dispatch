@@ -1,14 +1,25 @@
-# Radio Dispatch System
+# Maritime Coast Radio Simulator
 
-Automated radio dispatch simulator for training and demo use. Hold **Push to Talk**, speak a radio message, and the dispatcher listens, logs the traffic, and replies with generated voice plus a written entry.
+**Version 1.1.0**
+
+Automated maritime radio simulator for training and demo use. Hold **Push to Talk**, speak a VHF message, and the coast station listens, logs the traffic, and replies with generated voice plus a written entry.
+
+## Maritime procedures
+
+| Call | Meaning | System response |
+| --- | --- | --- |
+| **Mayday** | Distress — threat to life | Urgent acknowledgement and coordination |
+| **Pan Pan Pan** | Urgency — immediate attention, not life-threatening | Urgent acknowledgement, request details |
+| **Sécurité / Securitay** | Safety broadcast | Logged only — **no voice reply** |
+| **Unintelligible traffic** | Broken or unreadable transmission | *"Vessel calling, please repeat."* |
 
 ## Features
 
 - Push-to-talk listening via the browser microphone
 - Speech-to-text on the client (Web Speech API)
-- Rule-based dispatch brain for common radio traffic
+- Rule-based maritime coast-station brain
 - Generated voice reply (browser text-to-speech)
-- Live dispatch log and unit status board
+- Live traffic log and vessel status board
 - Optional text fallback if speech recognition is unavailable
 
 ## Requirements
@@ -31,20 +42,19 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 
 ## Try these phrases
 
-- `Dispatch, Unit 12 is 10-8`
-- `Unit 12 requesting 10-20`
-- `Engine 5 on scene, structure fire, requesting backup`
-- `Medic 3 transporting Code 3 to General Hospital`
-- `Unit 7 returning to station, 10-7`
-- `All units, traffic stop on Main Street`
+- `Mayday Mayday Mayday, this is fishing vessel Blue Horizon, taking on water`
+- `Pan Pan Pan, this is yacht Serenity, disabled near harbour entrance`
+- `Securitay, submerged log reported near channel marker 12`
+- `This is MV Atlantic, requesting radio check`
+- `static` or `[unintelligible]` — triggers *"Vessel calling, please repeat."*
 
 ## Architecture
 
 | Layer | Role |
 | --- | --- |
 | `static/` | PTT UI, mic capture, speech recognition, TTS playback |
-| `app/dispatch/` | Parses radio traffic and builds dispatcher replies |
-| `app/storage.py` | SQLite dispatch log + unit status |
+| `app/dispatch/` | Parses maritime traffic and builds coast-station replies |
+| `app/storage.py` | SQLite traffic log + vessel status |
 | `app/main.py` | FastAPI server and WebSocket live updates |
 
-This is a simulation tool. It is not a replacement for live emergency communications equipment or procedures.
+This is a simulation tool. It is not a replacement for live maritime emergency communications equipment or procedures.

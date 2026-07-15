@@ -11,6 +11,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from . import __version__
 from .dispatch import DispatchEngine
 from .models import StatusBoard, SystemStatus, TrafficIn, utc_now
 from .storage import DispatchStore
@@ -43,9 +44,9 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="Radio Dispatch System",
-    description="Automated radio dispatch simulator with listen-and-respond capability.",
-    version="1.0.0",
+    title="Maritime Coast Radio Simulator",
+    description="Maritime radio simulator with Mayday, Pan Pan, and Sécurité handling.",
+    version=__version__,
     lifespan=lifespan,
 )
 
@@ -59,12 +60,12 @@ async def index() -> FileResponse:
 
 @app.get("/api/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "version": __version__}
 
 
 @app.get("/api/status", response_model=SystemStatus)
 async def status() -> SystemStatus:
-    return SystemStatus(listening=False, channel="Primary", message="Ready for traffic")
+    return SystemStatus(listening=False, channel="VHF Ch 16", message="Ready for traffic")
 
 
 @app.get("/api/log")

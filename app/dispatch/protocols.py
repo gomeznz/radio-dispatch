@@ -1,4 +1,4 @@
-"""Radio protocol helpers: 10-codes, unit parsing, incident keywords."""
+"""Maritime radio protocol helpers: distress signals, vessel parsing."""
 
 from __future__ import annotations
 
@@ -8,76 +8,63 @@ from typing import Optional
 
 from ..models import Priority, UnitStatus
 
-TEN_CODES = {
-    "10-4": "acknowledged",
-    "10-6": "busy",
-    "10-7": "out of service",
-    "10-8": "in service",
-    "10-9": "repeat",
-    "10-20": "location",
-    "10-23": "arrived on scene",
-    "10-97": "arrived",
-    "10-98": "assignment complete",
+FILLER_WORDS = {
+    "uh",
+    "um",
+    "er",
+    "ah",
+    "static",
+    "garbled",
+    "broken",
+    "unintelligible",
+    "inaudible",
 }
 
-STATUS_PHRASES = {
-    UnitStatus.AVAILABLE: [
-        r"\b10-8\b",
-        r"\bin service\b",
-        r"\bavailable\b",
-        r"\bclear(?:ing)?\b",
-        r"\breturning to station\b",
+MARITIME_SIGNALS = {
+    "mayday": [
+        r"\bmay\s*day\s+may\s*day\s+may\s*day\b",
+        r"\bmayday\s+mayday\s+mayday\b",
+        r"\bmayday\b",
     ],
-    UnitStatus.ENROUTE: [
-        r"\ben\s*route\b",
-        r"\bresponding\b",
-        r"\bcode\s*[123]\b",
-        r"\brolling\b",
+    "pan_pan": [
+        r"\bpan\s+pan\s+pan\b",
+        r"\bpan\s+pan\b",
+        r"\bpan-pan\b",
     ],
-    UnitStatus.ONSCENE: [
-        r"\bon\s*scene\b",
-        r"\b10-23\b",
-        r"\b10-97\b",
-        r"\barrived\b",
-    ],
-    UnitStatus.TRANSPORTING: [
-        r"\btransport(?:ing)?\b",
-        r"\ben\s*route to (?:hospital|clinic|er)\b",
-    ],
-    UnitStatus.OUT_OF_SERVICE: [
-        r"\b10-7\b",
-        r"\bout of service\b",
-        r"\boff duty\b",
-    ],
-    UnitStatus.BUSY: [
-        r"\b10-6\b",
-        r"\bbusy\b",
-        r"\btraffic stop\b",
-        r"\binvestigating\b",
+    "securite": [
+        r"\bsecurit[ée]?\b",
+        r"\bsecuritay\b",
+        r"\bsecurity\b",
+        r"\bs[eé]curit[eé]\s+s[eé]curit[eé]\s+s[eé]curit[eé]\b",
     ],
 }
 
-INCIDENT_KEYWORDS = {
-    "structure fire": ["structure fire", "building fire", "house fire"],
-    "medical": ["medical", "patient", "cpr", "chest pain", "breathing"],
-    "traffic": ["traffic stop", "vehicle accident", "mvc", "crash", "collision"],
-    "backup": ["backup", "additional units", "assistance", "help"],
-    "welfare": ["welfare check", "wellness check"],
-    "alarm": ["alarm", "fire alarm"],
-}
-
-UNIT_PATTERN = re.compile(
-    r"\b("
-    r"(?:unit|engine|medic|ambulance|ladder|truck|squad|rescue|battalion|chief|car|pd)"
-    r"\s*\d{1,3}"
-    r")\b",
-    re.IGNORECASE,
-)
+VESSEL_PATTERNS = [
+    re.compile(
+        r"\bthis is\s+(?:the\s+)?(.+?)(?:,|\.|over|standing by|calling|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:mv|m/v|f/v|sv|yacht|fishing vessel|motor vessel|sailing vessel|"
+        r"pleasure craft|tug|pilot boat)\s+([A-Za-z0-9][\w\s'-]+?)(?:,|\.|over|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\bvessel\s+([A-Za-z0-9][\w\s'-]+?)(?:,|\.|over|$)", re.IGNORECASE),
+    re.compile(r"\bcallsign\s+([A-Z0-9]{2,8})\b", re.IGNORECASE),
+]
 
 LOCATION_PATTERN = re.compile(
-    r"(?:\bat|on|near|location(?: is)?|10-20(?: is)?)\s+(.+?)(?:,|\.|$)",
+    r"(?:position|located|location|at|off|near|latitude|coordinates?|bearing|"
+    r"abreast of|south of|north of|east of|west of)\s+(.+?)(?:,|\.|over|$)",
     re.IGNORECASE,
 )
+
+UNINTELLIGIBLE_MARKERS = [
+    re.compile(r"\[inaudible\]", re.IGNORECASE),
+    re.compile(r"\[unintelligible\]", re.IGNORECASE),
+    re.compile(r"^\?+$"),
+    re.compile(r"^(static|garbled|broken|unintelligible)\.?$", re.IGNORECASE),
+]
 
 
 @dataclass
@@ -94,22 +81,39 @@ class ParsedTraffic:
 
 def normalize_transcript(text: str) -> str:
     cleaned = " ".join(text.strip().split())
-    cleaned = cleaned.replace("ten four", "10-4")
-    cleaned = cleaned.replace("ten 4", "10-4")
-    cleaned = re.sub(r"\bten[-\s]?(\d{1,2})\b", r"10-\1", cleaned, flags=re.IGNORECASE)
-    return cleaned
+    replacements = {
+        "may day": "mayday",
+        "pan pan pan": "pan pan pan",
+        "securitay": "securite",
+        "security security security": "securite securite securite",
+    }
+    lowered = cleaned.lower()
+    for src, dst in replacements.items():
+        lowered = lowered.replace(src, dst)
+    return lowered
 
 
-def extract_unit(text: str) -> Optional[str]:
-    match = UNIT_PATTERN.search(text)
-    if not match:
-        return None
-    raw = match.group(1)
-    parts = raw.split()
-    if len(parts) == 1:
-        return raw.upper()
-    kind, number = parts[0], parts[1]
-    return f"{kind.title()} {number}"
+def _clean_vessel_name(name: str) -> str:
+    cleaned = name.strip(" .,'\"")
+    cleaned = re.sub(
+        r"^(?:the\s+)?(?:mv|m/v|f/v|sv|yacht|fishing vessel|motor vessel|sailing vessel|"
+        r"pleasure craft|tug|pilot boat)\s+",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    return cleaned.title()
+
+
+def extract_vessel(text: str) -> Optional[str]:
+    for pattern in VESSEL_PATTERNS:
+        match = pattern.search(text)
+        if not match:
+            continue
+        name = _clean_vessel_name(match.group(1))
+        if len(name) >= 2:
+            return name
+    return None
 
 
 def extract_location(text: str) -> Optional[str]:
@@ -117,99 +121,95 @@ def extract_location(text: str) -> Optional[str]:
     if not match:
         return None
     location = match.group(1).strip(" .,")
-    location = re.sub(r"\b(requesting|please|over|copy)\b.*$", "", location, flags=re.IGNORECASE)
+    location = re.sub(
+        r"\b(requesting|please|over|copy|standing by)\b.*$",
+        "",
+        location,
+        flags=re.IGNORECASE,
+    )
     location = location.strip(" .,")
     return location or None
 
 
-def detect_status(text: str) -> Optional[UnitStatus]:
-    # Prefer specific statuses first so phrases like "transporting Code 3"
-    # are not classified as generic enroute traffic.
-    priority_order = [
-        UnitStatus.TRANSPORTING,
-        UnitStatus.ONSCENE,
-        UnitStatus.OUT_OF_SERVICE,
-        UnitStatus.AVAILABLE,
-        UnitStatus.BUSY,
-        UnitStatus.ENROUTE,
-    ]
-    for status in priority_order:
-        for pattern in STATUS_PHRASES.get(status, []):
+def detect_maritime_signal(text: str) -> Optional[str]:
+    for signal, patterns in MARITIME_SIGNALS.items():
+        for pattern in patterns:
             if re.search(pattern, text, re.IGNORECASE):
-                return status
+                return signal
     return None
 
 
-def detect_incident(text: str) -> Optional[str]:
-    lowered = text.lower()
-    for label, keywords in INCIDENT_KEYWORDS.items():
-        if any(keyword in lowered for keyword in keywords):
-            return label
-    return None
+def is_unintelligible(text: str) -> bool:
+    normalized = normalize_transcript(text)
+    if not normalized:
+        return True
+
+    for pattern in UNINTELLIGIBLE_MARKERS:
+        if pattern.search(normalized):
+            return True
+
+    alpha_chars = re.sub(r"[^a-z]", "", normalized)
+    if len(alpha_chars) < 2:
+        return True
+
+    words = re.findall(r"[a-z0-9]+", normalized)
+    meaningful = [word for word in words if word not in FILLER_WORDS and len(word) > 1]
+    if meaningful:
+        return False
+
+    return detect_maritime_signal(normalized) is None
 
 
-def detect_ten_codes(text: str) -> list[str]:
-    found: list[str] = []
-    for code in TEN_CODES:
-        if re.search(rf"\b{re.escape(code)}\b", text, re.IGNORECASE):
-            found.append(code)
-    return found
-
-
-def infer_priority(text: str, incident: Optional[str], status: Optional[UnitStatus]) -> Priority:
-    lowered = text.lower()
-    if any(token in lowered for token in ("emergency", "code 3", "shots fired", "officer down", "structure fire")):
+def infer_priority(signal: Optional[str]) -> Priority:
+    if signal == "mayday":
         return Priority.EMERGENCY
-    if incident in {"structure fire", "medical", "backup"} or status == UnitStatus.TRANSPORTING:
-        return Priority.PRIORITY
-    if "code 2" in lowered or "priority" in lowered:
+    if signal == "pan_pan":
         return Priority.PRIORITY
     return Priority.ROUTINE
 
 
-def infer_intent(
-    text: str,
-    status: Optional[UnitStatus],
-    incident: Optional[str],
-    ten_codes: list[str],
-) -> str:
-    lowered = text.lower()
-    if "10-9" in ten_codes or "repeat" in lowered or "say again" in lowered:
+def infer_intent(text: str, signal: Optional[str]) -> str:
+    if is_unintelligible(text):
+        return "unintelligible"
+    if signal == "securite":
+        return "securite"
+    if signal == "mayday":
+        return "mayday"
+    if signal == "pan_pan":
+        return "pan_pan"
+    if re.search(r"\b(repeat|say again|come again)\b", text, re.IGNORECASE):
         return "repeat_request"
-    if "10-20" in ten_codes or "location" in lowered:
-        return "location_request"
-    if status == UnitStatus.ONSCENE:
-        return "on_scene"
-    if status == UnitStatus.TRANSPORTING:
-        return "transport"
-    if status == UnitStatus.AVAILABLE:
-        return "status_available"
-    if status == UnitStatus.OUT_OF_SERVICE:
-        return "status_oos"
-    if status == UnitStatus.ENROUTE:
-        return "enroute"
-    if incident == "backup" or "requesting" in lowered:
-        return "resource_request"
-    if incident:
-        return "incident_report"
-    if "dispatch" in lowered and status is None and incident is None:
-        return "general_call"
-    return "radio_check" if "radio check" in lowered else "general_traffic"
+    if re.search(r"\b(position|location|coordinates?|latitude)\b", text, re.IGNORECASE):
+        return "position_request"
+    if re.search(r"\bradio check\b", text, re.IGNORECASE):
+        return "radio_check"
+    return "general_traffic"
+
+
+def infer_vessel_status(signal: Optional[str], intent: str) -> Optional[UnitStatus]:
+    if intent == "mayday":
+        return UnitStatus.BUSY
+    if intent == "pan_pan":
+        return UnitStatus.ENROUTE
+    if signal == "securite":
+        return UnitStatus.UNKNOWN
+    return None
 
 
 def parse_traffic(transcript: str) -> ParsedTraffic:
     normalized = normalize_transcript(transcript)
-    unit_id = extract_unit(normalized)
-    ten_codes = detect_ten_codes(normalized)
-    status = detect_status(normalized)
-    incident_type = detect_incident(normalized)
+    signal = detect_maritime_signal(normalized)
+    intent = infer_intent(transcript, signal)
+    unit_id = extract_vessel(normalized)
     location = extract_location(normalized)
-    priority = infer_priority(normalized, incident_type, status)
-    intent = infer_intent(normalized, status, incident_type, ten_codes)
+    priority = infer_priority(signal)
+    status = infer_vessel_status(signal, intent)
+    incident_type = signal
+
     return ParsedTraffic(
         normalized=normalized,
         unit_id=unit_id,
-        ten_codes=ten_codes,
+        ten_codes=[],
         status=status,
         incident_type=incident_type,
         location=location,

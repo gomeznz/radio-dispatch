@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Radio Dispatch System</title>
+  <title>Maritime Coast Radio Simulator</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
@@ -11,16 +11,19 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">Automated Simulation</p>
-        <h1>Radio Dispatch</h1>
+        <h1>Maritime Coast Radio</h1>
       </div>
-      <div class="status-pill" id="connectionPill">Connecting…</div>
+      <div class="topbar-meta">
+        <div class="status-pill" id="connectionPill">Connecting…</div>
+        <div class="version-tag" id="versionTag">v1.1.0</div>
+      </div>
     </header>
 
     <main class="layout">
       <section class="panel radio-panel">
         <div class="panel-head">
           <h2>Channel Control</h2>
-          <span class="channel-tag">Primary</span>
+          <span class="channel-tag">VHF Ch 16</span>
         </div>
 
         <div class="meter" aria-hidden="true">
@@ -49,7 +52,7 @@
             <input
               id="textInput"
               type="text"
-              placeholder="Dispatch, Unit 12 is 10-8"
+              placeholder="Mayday, this is yacht Serenity, taking on water"
               autocomplete="off"
             />
             <button type="submit">Send</button>
@@ -72,18 +75,18 @@
 
       <section class="panel units-panel">
         <div class="panel-head">
-          <h2>Unit Status</h2>
+          <h2>Vessel Status</h2>
           <span>Live board</span>
         </div>
         <div id="unitList" class="unit-list">
-          <p class="empty">No units heard yet.</p>
+          <p class="empty">No vessels heard yet.</p>
         </div>
         <div class="tips">
           <h3>Try saying</h3>
           <ul>
-            <li>Dispatch, Unit 12 is 10-8</li>
-            <li>Engine 5 on scene, structure fire, requesting backup</li>
-            <li>Medic 3 transporting Code 3 to General Hospital</li>
+            <li>Mayday Mayday Mayday, this is MV Atlantic, engine failure</li>
+            <li>Pan Pan Pan, this is yacht Serenity, disabled near harbour entrance</li>
+            <li>Securitay, navigation hazard reported in the main channel</li>
           </ul>
         </div>
       </section>
