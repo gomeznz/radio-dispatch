@@ -1,0 +1,348 @@
+:root {
+  --bg: #0b1220;
+  --panel: #121b2d;
+  --panel-2: #182338;
+  --line: #2b3b57;
+  --text: #e8eefc;
+  --muted: #9eb0d0;
+  --accent: #35d0a3;
+  --accent-2: #5aa8ff;
+  --danger: #ff6b7a;
+  --warn: #ffcc66;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  --radius: 18px;
+  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(53, 208, 163, 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(90, 168, 255, 0.14), transparent 30%),
+    linear-gradient(180deg, #09101c 0%, #0b1220 100%);
+}
+
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 28px 20px 40px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.75rem;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}
+
+h1 {
+  font-size: 2rem;
+}
+
+.status-pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(90, 168, 255, 0.12);
+  border: 1px solid rgba(90, 168, 255, 0.35);
+  color: var(--accent-2);
+  font-size: 0.9rem;
+}
+
+.status-pill.online {
+  background: rgba(53, 208, 163, 0.12);
+  border-color: rgba(53, 208, 163, 0.4);
+  color: var(--accent);
+}
+
+.status-pill.offline {
+  background: rgba(255, 107, 122, 0.12);
+  border-color: rgba(255, 107, 122, 0.35);
+  color: var(--danger);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1.1fr 0.9fr;
+  gap: 18px;
+}
+
+.panel {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  min-height: 420px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  color: var(--muted);
+}
+
+.channel-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(53, 208, 163, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(53, 208, 163, 0.35);
+  font-size: 0.8rem;
+}
+
+.meter {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.meter-bar {
+  width: 8%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.12s linear;
+}
+
+.ptt {
+  width: 100%;
+  border: 0;
+  border-radius: 24px;
+  padding: 34px 20px;
+  cursor: pointer;
+  color: #041018;
+  background: linear-gradient(180deg, #54e0b4 0%, #2bb889 100%);
+  box-shadow: 0 12px 28px rgba(43, 184, 137, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  user-select: none;
+  touch-action: none;
+}
+
+.ptt:hover {
+  filter: brightness(1.05);
+}
+
+.ptt:active,
+.ptt.hot {
+  transform: translateY(2px) scale(0.99);
+  box-shadow: 0 6px 18px rgba(43, 184, 137, 0.28);
+  background: linear-gradient(180deg, #ffb454 0%, #ff8a3d 100%);
+}
+
+.ptt-label {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.ptt-sub {
+  display: block;
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+.live-box {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.live-row {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.live-row span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.live-row strong {
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.text-fallback {
+  margin-top: 18px;
+}
+
+.text-fallback label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+input[type="text"] {
+  flex: 1;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  padding: 12px 14px;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  border-color: var(--accent-2);
+}
+
+.input-row button,
+.ghost {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(90, 168, 255, 0.12);
+  color: var(--text);
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.ghost {
+  background: transparent;
+}
+
+.ghost.danger {
+  color: var(--danger);
+  border-color: rgba(255, 107, 122, 0.35);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.log-list,
+.unit-list {
+  display: grid;
+  gap: 10px;
+  max-height: 560px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.log-item,
+.unit-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+}
+
+.log-item .meta,
+.unit-card .meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.badge.routine {
+  background: rgba(90, 168, 255, 0.15);
+  color: var(--accent-2);
+}
+
+.badge.priority {
+  background: rgba(255, 204, 102, 0.15);
+  color: var(--warn);
+}
+
+.badge.emergency {
+  background: rgba(255, 107, 122, 0.18);
+  color: var(--danger);
+}
+
+.log-item p,
+.unit-card p {
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.log-item p:last-child,
+.unit-card p:last-child {
+  margin-bottom: 0;
+}
+
+.empty {
+  color: var(--muted);
+}
+
+.tips {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tips ul {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.tips li {
+  margin-bottom: 6px;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    min-height: auto;
+  }
+
+  .log-list,
+  .unit-list {
+    max-height: 360px;
+  }
+}

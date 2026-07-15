@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Radio Dispatch System</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Automated Simulation</p>
+        <h1>Radio Dispatch</h1>
+      </div>
+      <div class="status-pill" id="connectionPill">Connecting…</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel radio-panel">
+        <div class="panel-head">
+          <h2>Channel Control</h2>
+          <span class="channel-tag">Primary</span>
+        </div>
+
+        <div class="meter" aria-hidden="true">
+          <div class="meter-bar" id="meterBar"></div>
+        </div>
+
+        <button id="pttButton" class="ptt" type="button" aria-pressed="false">
+          <span class="ptt-label">Hold to Talk</span>
+          <span class="ptt-sub" id="pttHint">Release to send</span>
+        </button>
+
+        <div class="live-box">
+          <div class="live-row">
+            <span>Heard</span>
+            <strong id="heardText">Waiting for traffic…</strong>
+          </div>
+          <div class="live-row">
+            <span>Reply</span>
+            <strong id="replyText">—</strong>
+          </div>
+        </div>
+
+        <form id="textForm" class="text-fallback">
+          <label for="textInput">Text fallback</label>
+          <div class="input-row">
+            <input
+              id="textInput"
+              type="text"
+              placeholder="Dispatch, Unit 12 is 10-8"
+              autocomplete="off"
+            />
+            <button type="submit">Send</button>
+          </div>
+        </form>
+
+        <div class="actions">
+          <button id="muteButton" type="button" class="ghost">Mute voice</button>
+          <button id="resetButton" type="button" class="ghost danger">Clear log</button>
+        </div>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="panel-head">
+          <h2>Dispatch Log</h2>
+          <span id="logCount">0 entries</span>
+        </div>
+        <div id="logList" class="log-list"></div>
+      </section>
+
+      <section class="panel units-panel">
+        <div class="panel-head">
+          <h2>Unit Status</h2>
+          <span>Live board</span>
+        </div>
+        <div id="unitList" class="unit-list">
+          <p class="empty">No units heard yet.</p>
+        </div>
+        <div class="tips">
+          <h3>Try saying</h3>
+          <ul>
+            <li>Dispatch, Unit 12 is 10-8</li>
+            <li>Engine 5 on scene, structure fire, requesting backup</li>
+            <li>Medic 3 transporting Code 3 to General Hospital</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
