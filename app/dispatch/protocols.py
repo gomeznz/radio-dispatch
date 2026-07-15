@@ -66,6 +66,35 @@ UNINTELLIGIBLE_MARKERS = [
     re.compile(r"^(static|garbled|broken|unintelligible)\.?$", re.IGNORECASE),
 ]
 
+BLUFF_FISHERMANS_PATTERN = re.compile(
+    r"\bbluff\s+fisherm(?:a|e)n'?s?\s+radio\b",
+    re.IGNORECASE,
+)
+
+DEPARTING_PHRASES = [
+    r"\bdepart(?:ing|ure|ed)?\b",
+    r"\bleaving\s+(?:the\s+)?(?:port|harbour|harbor)\b",
+    r"\bleaving\s+bluff\b",
+    r"\boutbound\b",
+    r"\bheading\s+out\b",
+    r"\bgoing\s+out\b",
+    r"\bproceeding\s+to\s+sea\b",
+    r"\bunderway\s+from\b",
+]
+
+RETURNING_PHRASES = [
+    r"\breturn(?:ing|ed)?\b",
+    r"\bback\s+in\s+port\b",
+    r"\bback\s+alongside\b",
+    r"\b(?:in|into)\s+port\b",
+    r"\bentering\s+(?:the\s+)?(?:port|harbour|harbor)\b",
+    r"\balongside\b",
+    r"\bberthed\b",
+    r"\bmoored\b",
+    r"\bback\s+at\s+bluff\b",
+    r"\barrived\s+(?:back\s+)?(?:in|at)\b",
+]
+
 
 @dataclass
 class ParsedTraffic:
@@ -86,6 +115,9 @@ def normalize_transcript(text: str) -> str:
         "pan pan pan": "pan pan pan",
         "securitay": "securite",
         "security security security": "securite securite securite",
+        "fisherman's radio": "fishermans radio",
+        "fishermen's radio": "fishermans radio",
+        "fishermans' radio": "fishermans radio",
     }
     lowered = cleaned.lower()
     for src, dst in replacements.items():
@@ -96,7 +128,7 @@ def normalize_transcript(text: str) -> str:
 def _clean_vessel_name(name: str) -> str:
     cleaned = name.strip(" .,'\"")
     cleaned = re.sub(
-        r"^(?:the\s+)?(?:mv|m/v|f/v|sv|yacht|fishing vessel|motor vessel|sailing vessel|"
+        r"^(?:the\s+)?(?:mv|m/v|f/v|fv|sv|yacht|fishing vessel|motor vessel|sailing vessel|"
         r"pleasure craft|tug|pilot boat)\s+",
         "",
         cleaned,
@@ -139,6 +171,20 @@ def detect_maritime_signal(text: str) -> Optional[str]:
     return None
 
 
+def is_bluff_fishermans_call(text: str) -> bool:
+    return BLUFF_FISHERMANS_PATTERN.search(text) is not None
+
+
+def detect_port_movement(text: str) -> Optional[str]:
+    for pattern in RETURNING_PHRASES:
+        if re.search(pattern, text, re.IGNORECASE):
+            return "returning"
+    for pattern in DEPARTING_PHRASES:
+        if re.search(pattern, text, re.IGNORECASE):
+            return "departing"
+    return None
+
+
 def is_unintelligible(text: str) -> bool:
     normalized = normalize_transcript(text)
     if not normalized:
@@ -177,6 +223,13 @@ def infer_intent(text: str, signal: Optional[str]) -> str:
         return "mayday"
     if signal == "pan_pan":
         return "pan_pan"
+    if is_bluff_fishermans_call(text):
+        movement = detect_port_movement(text)
+        if movement == "departing":
+            return "bluff_departing"
+        if movement == "returning":
+            return "bluff_returning"
+        return "bluff_fishermans"
     if re.search(r"\b(repeat|say again|come again)\b", text, re.IGNORECASE):
         return "repeat_request"
     if re.search(r"\b(position|location|coordinates?|latitude)\b", text, re.IGNORECASE):
@@ -191,6 +244,10 @@ def infer_vessel_status(signal: Optional[str], intent: str) -> Optional[UnitStat
         return UnitStatus.BUSY
     if intent == "pan_pan":
         return UnitStatus.ENROUTE
+    if intent == "bluff_departing":
+        return UnitStatus.ENROUTE
+    if intent == "bluff_returning":
+        return UnitStatus.AVAILABLE
     if signal == "securite":
         return UnitStatus.UNKNOWN
     return None
@@ -205,6 +262,8 @@ def parse_traffic(transcript: str) -> ParsedTraffic:
     priority = infer_priority(signal)
     status = infer_vessel_status(signal, intent)
     incident_type = signal
+    if intent in {"bluff_departing", "bluff_returning", "bluff_fishermans"}:
+        incident_type = intent.removeprefix("bluff_")
 
     return ParsedTraffic(
         normalized=normalized,

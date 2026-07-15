@@ -19,6 +19,9 @@ def _vessel_label(parsed: ParsedTraffic) -> str:
     return parsed.unit_id or "vessel"
 
 
+BLUFF_STATION = "Bluff Fishermans Radio"
+
+
 def craft_response(parsed: ParsedTraffic) -> CraftedResponse:
     vessel = _vessel_label(parsed)
     location = parsed.location
@@ -29,6 +32,21 @@ def craft_response(parsed: ParsedTraffic) -> CraftedResponse:
         return CraftedResponse(
             response="(no response — sécurité broadcast)",
             spoken_response="",
+        )
+    elif parsed.intent == "bluff_departing":
+        text = (
+            f"{vessel.title()}, this is {BLUFF_STATION}. "
+            "Received, you are departing. Please advise number of persons on board."
+        )
+    elif parsed.intent == "bluff_returning":
+        text = (
+            f"{vessel.title()}, this is {BLUFF_STATION}. "
+            "Welcome back, your return is acknowledged."
+        )
+    elif parsed.intent == "bluff_fishermans":
+        text = (
+            f"{vessel.title()}, this is {BLUFF_STATION}. "
+            "Received, your message is logged."
         )
     elif parsed.intent == "mayday":
         where = f" Position noted as {location}." if location else ""

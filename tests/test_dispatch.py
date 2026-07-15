@@ -47,6 +47,22 @@ class ProtocolTests(unittest.TestCase):
         crafted = craft_response(parse_traffic("static"))
         self.assertEqual(crafted.response, "Vessel calling, please repeat.")
 
+    def test_bluff_departing(self) -> None:
+        parsed = parse_traffic(
+            "Bluff Fishermans Radio, this is fishing vessel Southern Cross, departing Bluff harbour"
+        )
+        self.assertEqual(parsed.intent, "bluff_departing")
+        self.assertEqual(parsed.unit_id, "Southern Cross")
+        self.assertEqual(parsed.status, UnitStatus.ENROUTE)
+
+    def test_bluff_returning(self) -> None:
+        parsed = parse_traffic(
+            "This is FV Ocean Star, Bluff Fishermans Radio, back in port"
+        )
+        self.assertEqual(parsed.intent, "bluff_returning")
+        self.assertEqual(parsed.unit_id, "Ocean Star")
+        self.assertEqual(parsed.status, UnitStatus.AVAILABLE)
+
 
 class ResponseTests(unittest.TestCase):
     def test_securite_has_no_spoken_reply(self) -> None:
@@ -60,6 +76,22 @@ class ResponseTests(unittest.TestCase):
         )
         self.assertIn("Mayday received", crafted.response)
         self.assertIn("Distress acknowledged", crafted.response)
+
+    def test_bluff_departing_asks_pob(self) -> None:
+        crafted = craft_response(
+            parse_traffic(
+                "Bluff Fisherman's Radio, this is Southern Cross, departing port"
+            )
+        )
+        self.assertIn("Bluff Fishermans Radio", crafted.response)
+        self.assertIn("number of persons on board", crafted.response.lower())
+
+    def test_bluff_returning_acknowledged(self) -> None:
+        crafted = craft_response(
+            parse_traffic("This is Ocean Star, Bluff Fishermans Radio, returning to port")
+        )
+        self.assertIn("Bluff Fishermans Radio", crafted.response)
+        self.assertIn("Welcome back", crafted.response)
 
 
 class EngineTests(unittest.IsolatedAsyncioTestCase):

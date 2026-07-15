@@ -12,6 +12,8 @@ Automated maritime radio simulator for training and demo use. Hold **Push to Tal
 | **Pan Pan Pan** | Urgency — immediate attention, not life-threatening | Urgent acknowledgement, request details |
 | **Sécurité / Securitay** | Safety broadcast | Logged only — **no voice reply** |
 | **Unintelligible traffic** | Broken or unreadable transmission | *"Vessel calling, please repeat."* |
+| **Bluff Fishermans Radio — departing** | Vessel leaving port | Ask number of persons on board |
+| **Bluff Fishermans Radio — returning** | Vessel back in port | Acknowledge return |
 
 ## Features
 
@@ -45,7 +47,8 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000).
 - `Mayday Mayday Mayday, this is fishing vessel Blue Horizon, taking on water`
 - `Pan Pan Pan, this is yacht Serenity, disabled near harbour entrance`
 - `Securitay, submerged log reported near channel marker 12`
-- `This is MV Atlantic, requesting radio check`
+- `This is FV Ocean Star, Bluff Fishermans Radio, back in port`
+- `Bluff Fishermans Radio, this is Southern Cross, departing Bluff harbour`
 - `static` or `[unintelligible]` — triggers *"Vessel calling, please repeat."*
 
 ## Architecture
